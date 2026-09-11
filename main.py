@@ -2,6 +2,8 @@ import json
 import logging
 import os
 import io
+import httpx
+
 from google import genai
 from google.genai import types
 from google.genai import errors as genai_errors
@@ -22,6 +24,8 @@ cloudinary.config(
     api_key = os.getenv("CLOUDINARY_API_KEY"),
     api_secret = os.getenv("CLOUDINARY_API_SECRET")
 )
+
+SpringBoot_url = os.getenv("SPRINGBOOT_URL")
 
 MATERIALES_MAP = {
     "Botella": 1,
@@ -199,11 +203,47 @@ Si no detectas cartón ni botellas de plástico, responde únicamente: "No se de
     if not url_publica:
         raise HTTPException(status_code=400,detail="No se pudo subir la imagen a clodinary.")
 
-    return {
+    datos_java = {
         "confianza": analysis_data.confiabilidad_porcentaje,
         "utl_imagen": url_publica, # URL de la imagen en la nube
         "id_session": id_session,
         "id_categoria": id_categoria,
+        "id_material": id_material
+    }
+
+    headers = {
+        "Authorization": authorization,
+        "Content-Type": "application/json"
+    }
+
+    url_api_java = f"{SpringBoot_url}/api/registroia/guardar-resultado"
+    respuesta_java = {"status_code_java": 500, "info": "Error desconocido"}
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            peticion = await client.post(url_api_java, json=datos_java, headers=headers)
+            if peticion.status_code in [200, 201]:
+                respuesta_java = {
+                    "status_code_java": 200,
+                    "msg": "Resultado enviado a Spring Boot con éxito."
+                }
+            else:
+                respuesta_java = {
+                    "status_code_java": peticion.status_code,
+                    "msg": "Error al enviar a Spring Boot: " + peticion.text,
+                }
+    except Exception as e:
+        respuesta_java = {
+            "status_code_java": 500,
+            "msg": "Java backend no alcanzable: " + str(e),
+        }
+
+    return {
+        "status": "éxito",
+        "objeto_detectado": analysis_data.material,
+        "acertacion_confianza": analysis_data.confiabilidad_porcentaje,
+        "tamano_calculado": analysis_data.tamano,
+        "id_categoria_puntaje": id_categoria,  
+        "envio_backend": respuesta_java,
         "id_material": id_material
     }
 
