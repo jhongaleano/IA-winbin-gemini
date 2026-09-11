@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import io
 from google import genai
 from google.genai import types
 from google.genai import errors as genai_errors
@@ -10,8 +12,16 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, HTTPException, status, Form, Header
 
 
+import cloudinary
+import cloudinary.uploader
 
 load_dotenv()
+
+cloudinary.config(
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME") ,
+    api_key = os.getenv("CLOUDINARY_API_KEY"),
+    api_secret = os.getenv("CLOUDINARY_API_SECRET")
+)
 
 MATERIALES_MAP = {
     "Botella": 1,
@@ -40,9 +50,20 @@ class RecyclableItem(BaseModel):
 
 
 
+def subir_cloudinary(file_content, filename):
+    if not all([os.getenv("CLOUDINARY_CLOUD_NAME"), os.getenv("CLOUDINARY_API_KEY"), os.getenv("CLOUDINARY_API_SECRET")]):
+        raise HTTPException(status_code=500, detail="Configuración de Cloudinary incompleta.")
+
+    try:
+        response = cloudinary.uploader.upload(file_content, public_id=filename)
+        return response['secure_url']
+    except Exception as e:
+        logging(f"Error al subiar a cloudinary: {e}")
+        return None
+
 app = FastAPI(
-    title="Servicio de Detección de Reciclaje con YOLO - WinBin",
-    description="API en Python para procesar imágenes con dos modelos especializados y retornar id_categoria.",
+    title="Servicio de Detección de Reciclaje con GEMINI - WinBin",
+    description="API en Python para procesar imágenes.",
     version="1.1.0"
 )
 
@@ -52,6 +73,11 @@ async def analizarImagen(
     file: UploadFile = File(...),
     authorization: str = Header(...)
     ):
+
+    contents =  await file.read()
+
+    if not contents:
+        raise HTTPException(status_code=400, detail="archivo vacio. ")
 
     if not authorization.startswith("Bearer "):
         raise HTTPException(
@@ -67,10 +93,12 @@ async def analizarImagen(
         )
 
     try:
-        image = Image.open(file.file)
+        image = Image.open(io.BytesIO(contents))
         image.verify()  # detecta corrupción básica
         file.file.seek(0)  # verify() deja el puntero al final
-        image = Image.open(file.file)
+        image = Image.open(io.BytesIO(contents))
+
+        
     except UnidentifiedImageError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -155,9 +183,15 @@ async def analizarImagen(
             "confianza": analysis_data.confiabilidad_porcentaje,
         },
     )
+
+    url_publica = subir_cloudinary(contents,file.filename)
+
+    if not url_publica:
+        raise HTTPException(status_code=400,detail="No se pudo subir la imagen a clodinary.")
+
     return {
         "confianza": analysis_data.confiabilidad_porcentaje,
-        "utl_imagen": image, # URL de la imagen en la nube
+        "utl_imagen": url_publica, # URL de la imagen en la nube
         "id_session": id_session,
         "id_categoria": id_categoria,
         "id_material": id_material
