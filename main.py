@@ -189,8 +189,8 @@ Si detectas un objeto reciclable válido:
     if analysis_data.status == "no_reciclable" or analysis_data.confiabilidad_porcentaje < 60 or not analysis_data.material or not analysis_data.tamano:
         return {
             "status":"no_reciclable",
-            "objeto_detectato":"Desconocido/No valido",
-            "acertacion_de_confianza":analysis_data.confiabilidad_porcentaje,
+            "objeto_detectado":"Desconocido/No valido",
+            "acertacion_confianza":analysis_data.confiabilidad_porcentaje,
             "msg": "El obejto no coincide con botellas de plastico o carton con suficiente confianza"
         }
     
