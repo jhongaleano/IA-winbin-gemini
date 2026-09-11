@@ -218,10 +218,10 @@ Si detectas un objeto reciclable válido:
 
     datos_java = {
         "confianza": analysis_data.confiabilidad_porcentaje,
-        "utl_imagen": url_publica, # URL de la imagen en la nube
-        "id_session": id_session,
-        "id_material": id_material,
-        "id_categoria": id_categoria
+        "utlImagen": url_publica, # URL de la imagen en la nube
+        "idSession": id_session,
+        "idMaterial": id_material,
+        "idCategoria": id_categoria
     }
 
     headers = {
