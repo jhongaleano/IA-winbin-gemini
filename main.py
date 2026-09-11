@@ -220,8 +220,8 @@ Si detectas un objeto reciclable válido:
         "confianza": analysis_data.confiabilidad_porcentaje,
         "utl_imagen": url_publica, # URL de la imagen en la nube
         "id_session": id_session,
-        "id_categoria": id_categoria,
-        "id_material": id_material
+        "id_material": id_material,
+        "id_categoria": id_categoria
     }
 
     headers = {
