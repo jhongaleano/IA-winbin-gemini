@@ -87,7 +87,7 @@ async def analizarImagen(
     authorization: str = Header(...)
     ):
 
-    contents =  await file.read()
+    
 
     if not contents:
         raise HTTPException(status_code=400, detail="archivo vacio. ")
@@ -106,6 +106,7 @@ async def analizarImagen(
         )
 
     try:
+        contents =  await file.read()
         image = Image.open(io.BytesIO(contents))
         image.verify()  # detecta corrupción básica
         file.file.seek(0)  # verify() deja el puntero al final
