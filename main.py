@@ -111,11 +111,21 @@ async def analizarImagen(
         )
 
     prompt = """
-    Analiza la imagen adjunta e identifica si hay cartón o botella de plastico.
-    Reglas para asignación de puntos:
-    - Botella de plástico/vidrio: Pequeña (10 pts), Mediana (20 pts), Grande (30 pts).
-    - Cartón: Pequeño (15 pts), Mediano (25 pts), Grande (40 pts).
-    - Otro material: 0 pts.
+    Analiza la imagen adjunta y determina si contiene cartón o botellas de plástico. Sigue estrictamente esta estructura en tu respuesta:
+
+1. Detección de Objetos:
+   - Identifica si hay "Cartón", "Botella de plástico" o "Ninguno".
+
+
+2. Estimación de Tamaño:
+   - Clasifica el tamaño de cada objeto detectado en una de las siguientes categorías:
+     * Pequeño (ej. botellas de 275 ml o menos, pedazos pequeños de cartón menores a 20x20 cm)
+     * Mediano (ej. botellas de 500 ml a 1 litro, cajas de zapatos o empaques medianos)
+     * Grande (ej.  botellas de 1.5 litros a 3 litros, garrafones de agua, cajas grandes de mudanza o empaques voluminosos)
+   - Proporciona una dimensión aproximada estimada (en centímetros o litros) basándote en objetos de referencia visibles en la imagen.
+
+
+Si no detectas cartón ni botellas de plástico, responde únicamente: "No se detectó cartón ni botellas de plástico en la imagen."
 
     Devuelve la información estructurada respetando el esquema.
     """
