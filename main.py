@@ -10,7 +10,7 @@ from google.genai import types
 from google.genai import errors as genai_errors
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field, ValidationError
-from typing import Literal
+from typing import Literal, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, HTTPException, status, Form, Header
 
@@ -43,15 +43,10 @@ CATEGORIAS_MAP = {
 }
 
 class RecyclableItem(BaseModel):
-    material: Literal["Botella","Carton"] = Field(
-        description="Material identificado en la imagen."
-    )
-    confiabilidad_porcentaje: float = Field(
-        description="Porcentaje de certeza de la identificación (0.0 a 100.0)."
-    )
-    tamano: Literal["pequeno", "mediano", "grande"] = Field(
-        description="Estimación del tamaño del objeto."
-    )
+    status: Literal["exito", "no_reciclable"]
+    confiabilidad_porcentaje: float = Field(ge=0, le=100)
+    material: Optional[Literal["Botella", "Carton"]] = None
+    tamano: Optional[Literal["pequeno", "mediano", "grande"]] = None
 
 
 
@@ -86,7 +81,7 @@ async def analizarImagen(
     file: UploadFile = File(...),
     authorization: str = Header(...)
     ):
-
+    contents =  await file.read()
     
 
     if not contents:
@@ -106,7 +101,7 @@ async def analizarImagen(
         )
 
     try:
-        contents =  await file.read()
+        
         image = Image.open(io.BytesIO(contents))
         image.verify()  # detecta corrupción básica
         file.file.seek(0)  # verify() deja el puntero al final
@@ -138,9 +133,15 @@ async def analizarImagen(
      * Grande (ej.  botellas de 1.5 litros a 3 litros, garrafones de agua, cajas grandes de mudanza o empaques voluminosos)
    - Proporciona una dimensión aproximada estimada (en centímetros o litros) basándote en objetos de referencia visibles en la imagen.
 
+Si no detectas cartón ni botellas de plástico:
+- status: "no_reciclable"
+- confiabilidad_porcentaje: 0.0
+- material: null
+- tamano: null
 
-Si no detectas cartón ni botellas de plástico, responde únicamente: "No se detectó cartón ni botellas de plástico en la imagen."
-
+Si detectas un objeto reciclable válido:
+- status: "exito"
+- material, tamano y confiabilidad_porcentaje obligatorios
     Devuelve la información estructurada respetando el esquema.
     """
     try: 
@@ -183,6 +184,15 @@ Si no detectas cartón ni botellas de plástico, responde únicamente: "No se de
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="La respuesta del modelo no cumple el formato esperado.",
         )
+
+
+    if analysis_data.status == "no_reciclable" or analysis_data.confiabilidad_porcentaje < 60 or not analysis_data.material or not analysis_data.tamano:
+        return {
+            "status":"no_reciclable",
+            "objeto_detectato":"Desconocido/No valido",
+            "acertacion_de_confianza":analysis_data.confiabilidad_porcentaje,
+            "msg": "El obejto no coincide con botellas de plastico o carton con suficiente confianza"
+        }
     
 
 
@@ -199,14 +209,7 @@ Si no detectas cartón ni botellas de plástico, responde únicamente: "No se de
                 "tamano": analysis_data.tamano,
             },
         )
-    if analysis_data.confiabilidad_porcentaje < 60:
-     raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        detail={
-            "mensaje": "Confianza insuficiente para clasificar el objeto.",
-            "confianza": analysis_data.confiabilidad_porcentaje,
-        },
-    )
+    
 
     url_publica = subir_cloudinary(contents,file.filename)
 
@@ -248,7 +251,7 @@ Si no detectas cartón ni botellas de plástico, responde únicamente: "No se de
         }
 
     return {
-        "status": "éxito",
+        "status": "exito",
         "objeto_detectado": analysis_data.material,
         "acertacion_confianza": analysis_data.confiabilidad_porcentaje,
         "tamano_calculado": analysis_data.tamano,
