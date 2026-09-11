@@ -6,3 +6,4 @@ pillow==12.3.0
 pydantic==2.13.5
 python-dotenv==1.2.3
 uvicorn
+python-multipart
