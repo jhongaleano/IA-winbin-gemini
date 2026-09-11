@@ -229,7 +229,7 @@ Si detectas un objeto reciclable válido:
         "Content-Type": "application/json"
     }
 
-    url_api_java = f"{SpringBoot_url}/api/registroia/guardar-resultado"
+    url_api_java = f"{SpringBoot_url}api/registroia/guardar-resultado"
     respuesta_java = {"status_code_java": 500, "info": "Error desconocido"}
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
