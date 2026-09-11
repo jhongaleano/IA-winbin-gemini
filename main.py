@@ -3,6 +3,7 @@ import logging
 import os
 import io
 import httpx
+from fastapi.middleware.cors import CORSMiddleware
 
 from google import genai
 from google.genai import types
@@ -69,6 +70,14 @@ app = FastAPI(
     title="Servicio de Detección de Reciclaje con GEMINI - WinBin",
     description="API en Python para procesar imágenes.",
     version="1.1.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],            # Permite peticiones desde cualquier origen (Flutter, Web, etc.)
+    allow_credentials=True,
+    allow_methods=["*"],            # Permite todos los métodos HTTP (POST, GET, OPTIONS, etc.)
+    allow_headers=["*"],            # Permite todos los encabezados (Authorization, Content-Type, etc.)
 )
 
 @app.post("/api/ia-analisis")
