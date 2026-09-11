@@ -82,7 +82,7 @@ app.add_middleware(
 
 @app.post("/api/ia-analisis")
 async def analizarImagen(
-    id_session: int = Form(...), 
+    id_session: str = Form(...), 
     file: UploadFile = File(...),
     authorization: str = Header(...)
     ):
