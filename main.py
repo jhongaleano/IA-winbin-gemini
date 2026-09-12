@@ -251,7 +251,7 @@ Si detectas un objeto reciclable válido:
         }
 
     return {
-        "status": "exito",
+        "status": analysis_data.status,
         "objeto_detectado": analysis_data.material,
         "acertacion_confianza": analysis_data.confiabilidad_porcentaje,
         "tamano_calculado": analysis_data.tamano,
