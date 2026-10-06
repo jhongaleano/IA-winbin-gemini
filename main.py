@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field, ValidationError
 from typing import Literal, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, HTTPException, status, Form, Header
+import uuid
 
 
 import cloudinary
@@ -55,10 +56,10 @@ def subir_cloudinary(file_content, filename):
         raise HTTPException(status_code=500, detail="Configuración de Cloudinary incompleta.")
 
     try:
-        response = cloudinary.uploader.upload(file_content, public_id=filename)
+        response = cloudinary.uploader.upload(file_content, folder= "winbin_detecciones")
         return response['secure_url']
     except Exception as e:
-        logging(f"Error al subiar a cloudinary: {e}")
+        logging.error(f"Error al subir a cloudinary: {e}")
         return None
 
 app = FastAPI(
