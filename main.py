@@ -76,6 +76,10 @@ app.add_middleware(
     allow_headers=["*"],            # Permite todos los encabezados (Authorization, Content-Type, etc.)
 )
 
+@app.get("/api/health")
+async def health():
+    return {"status": "ok", "message": "Servicio de IA activo"}
+
 @app.post("/api/ia-analisis")
 async def analizarImagen(
     id_session: str = Form(...), 
@@ -192,7 +196,7 @@ Si detectas un objeto reciclable válido:
             "status":"no_reciclable",
             "objeto_detectado":"Desconocido/No valido",
             "acertacion_confianza":analysis_data.confiabilidad_porcentaje,
-            "msg": "El obejto no coincide con botellas de plastico o carton con suficiente confianza"
+            "msg": "El objeto no coincide con botellas de plastico o carton con suficiente confianza"
         }
     
 
